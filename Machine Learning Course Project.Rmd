@@ -29,19 +29,30 @@ table(colSums((is.na(testing))))
 
 Therefore, as all columns with NAs (100 in this case) had 100% NAs (20 each), those columns were removed both from the testing and training datasets.
 
-```{r, echo=FALSE}
+```{r}
 datacols <- names(which(colSums(is.na(testing))!=0))
 testing <- select(testing, -datacols)
 training <- select(training, -datacols)
 ```
 
-Finally, the training dataset with which to start working, went down to the following characteristics:
+Then, a final row check for NAs was performed for the training set
+
+```{r}
+which(colSums(is.na(training)) != 0)
+which(rowSums(is.na(training)) != 0)
+```
+
+Finally, after removing the only row with the 3 remaining NAs, the training dataset with which to start working went down to the following dimensions (detailed structure of the obtained dataset can be seen in Appendix 1):
+
+```{r}
+training <- training[-which(rowSums(is.na(training)) != 0),]
+dim(training)
+```
+
+## Appendix 1: Getting and Cleaning Data
+
+Final structure of the obtained training dataset (very similar to that of the testing set, but for the last column):
 
 ```{r}
 str(training)
 ```
-
-
-## Including Plots
-
-You can also embed plots, for example:

@@ -137,9 +137,25 @@ $(document).ready(function () {
 ##   0  20 
 ##  59 100</code></pre>
 <p>Therefore, as all columns with NAs (100 in this case) had 100% NAs (20 each), those columns were removed both from the testing and training datasets.</p>
-<p>Finally, the training dataset with which to start working, went down to the following characteristics:</p>
+<pre class="r"><code>datacols &lt;- names(which(colSums(is.na(testing))!=0))
+testing &lt;- select(testing, -datacols)
+training &lt;- select(training, -datacols)</code></pre>
+<p>Then, a final row check for NAs was performed for the training set</p>
+<pre class="r"><code>which(colSums(is.na(training)) != 0)</code></pre>
+<pre><code>## magnet_dumbbell_z  magnet_forearm_y  magnet_forearm_z 
+##                45                57                58</code></pre>
+<pre class="r"><code>which(rowSums(is.na(training)) != 0)</code></pre>
+<pre><code>## [1] 5373</code></pre>
+<p>Finally, after removing the only row with the 3 remaining NAs, the training dataset with which to start working went down to the following dimensions (detailed structure of the obtained dataset can be seen in Appendix 1):</p>
+<pre class="r"><code>training &lt;- training[-which(rowSums(is.na(training)) != 0),]
+dim(training)</code></pre>
+<pre><code>## [1] 19621    59</code></pre>
+</div>
+<div id="appendix-1-getting-and-cleaning-data" class="section level2">
+<h2>Appendix 1: Getting and Cleaning Data</h2>
+<p>Final structure of the obtained training dataset (very similar to that of the testing set, but for the last column):</p>
 <pre class="r"><code>str(training)</code></pre>
-<pre><code>## Classes 'tbl_df', 'tbl' and 'data.frame':    19622 obs. of  59 variables:
+<pre><code>## Classes 'tbl_df', 'tbl' and 'data.frame':    19621 obs. of  59 variables:
 ##  $ user_name           : chr  &quot;carlitos&quot; &quot;carlitos&quot; &quot;carlitos&quot; &quot;carlitos&quot; ...
 ##  $ raw_timestamp_part_1: int  1323084231 1323084231 1323084231 1323084232 1323084232 1323084232 1323084232 1323084232 1323084232 1323084232 ...
 ##  $ raw_timestamp_part_2: int  788290 808298 820366 120339 196328 304277 368296 440390 484323 484434 ...
@@ -199,10 +215,6 @@ $(document).ready(function () {
 ##  $ magnet_forearm_y    : int  654 661 658 658 655 660 659 660 653 656 ...
 ##  $ magnet_forearm_z    : int  476 473 469 469 473 478 470 474 476 473 ...
 ##  $ classe              : chr  &quot;A&quot; &quot;A&quot; &quot;A&quot; &quot;A&quot; ...</code></pre>
-</div>
-<div id="including-plots" class="section level2">
-<h2>Including Plots</h2>
-<p>You can also embed plots, for example:</p>
 </div>
 
 
