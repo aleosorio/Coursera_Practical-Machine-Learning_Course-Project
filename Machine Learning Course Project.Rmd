@@ -42,17 +42,49 @@ which(colSums(is.na(training)) != 0)
 which(rowSums(is.na(training)) != 0)
 ```
 
-Finally, after removing the only row with the 3 remaining NAs, the training dataset with which to start working went down to the following dimensions (detailed structure of the obtained dataset can be seen in Appendix 1):
+Finally, after removing the only row with the 3 remaining NAs from the training set, the obtained working set is checked for NAs for the last time:
 
 ```{r}
-training <- training[-which(rowSums(is.na(training)) != 0),]
-dim(training)
+workingset <- training[-which(rowSums(is.na(training)) != 0),]
+anyNA(workingset)
 ```
+
+The final working dataset, with no NAs, went down to the following dimensions (detailed structure of the obtained dataset can be seen in Appendix 1):
+
+```{r}
+dim(workingset)
+```
+
+
+## Methodology
+
+### Model Selection
+
+Given the classification problem, the following model types were tried separately, each with its own feature selection.
+
+1. GLM - Logistic Regression
+2. Random Forests
+3. Boosting
+
+After obtaining results for each model, a final GAM model based on the combination of the previous ones was also tested.
+
+### Error Type Selection
+
+Given the classification problem, with more than two possible outcomes, the main error type used for each model was Accuracy.  Additionally, for the GAM model evaluation, RMSE was also taken into consideration.
+
+### Cross Validation
+
+The following three sets were created, using Random Subsampling:
+
+1. Building Data Set: 70% of the working dataset.  This set was sub divided again into:
+ * Training Set (70%)
+ * Testing Set (30%)
+2. Validation Set: 30% of the working dataset.
 
 ## Appendix 1: Getting and Cleaning Data
 
 Final structure of the obtained training dataset (very similar to that of the testing set, but for the last column):
 
 ```{r}
-str(training)
+str(workingset)
 ```
