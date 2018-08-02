@@ -8,7 +8,36 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(caret)
+set.seed(123)
 ```
+
+## Methodology
+
+### Model Selection
+
+Given the classification problem, the following model types were tried separately, each with its own feature selection.
+
+1. GLM - Logistic Regression
+2. Random Forests
+3. Boosting
+
+After obtaining results for each model, a final GAM model based on the combination of the previous ones was also tested.
+
+### Error Type Selection
+
+Given the classification problem, with more than two possible outcomes, the main error type used for each model was Accuracy.  Additionally, for the GAM model evaluation, RMSE was also taken into consideration.
+
+### Data Splitting and Cross Validation
+
+The following three sets were created, using Random Subsampling:
+
+1. Building Data Set: 70% of the working dataset.  This set was sub divided again into:
+ * Training Set (70%)
+ * Testing Set (30%)
+2. Validation Set: 30% of the working dataset.
+
+Given the types of models selected (besides GLM), which use sub sampling themselves, all models were trained using the same training and testing sets.  The validation set was finally used for the GAM based combination model.
 
 ## Getting and Cleaning Data
 
@@ -55,31 +84,24 @@ The final working dataset, with no NAs, went down to the following dimensions (d
 dim(workingset)
 ```
 
+## Data Splitting
 
-## Methodology
+Step 1: Creating building and validation sets
 
-### Model Selection
+```{r}
+indbuild <- createDataPartition(workingset$classe, p = 0.7, list = FALSE)
+validata <- workingset[-indbuild,]
+buildata <- workingset[indbuild,]
+```
 
-Given the classification problem, the following model types were tried separately, each with its own feature selection.
+Step 2: Creating training and testing sets
 
-1. GLM - Logistic Regression
-2. Random Forests
-3. Boosting
+```{r}
+indtrain <- createDataPartition(buildata$classe, p = 0.7, list = FALSE)
+training <- buildata[indtrain,]
+testing <- buildata[-indtrain,]
+```
 
-After obtaining results for each model, a final GAM model based on the combination of the previous ones was also tested.
-
-### Error Type Selection
-
-Given the classification problem, with more than two possible outcomes, the main error type used for each model was Accuracy.  Additionally, for the GAM model evaluation, RMSE was also taken into consideration.
-
-### Cross Validation
-
-The following three sets were created, using Random Subsampling:
-
-1. Building Data Set: 70% of the working dataset.  This set was sub divided again into:
- * Training Set (70%)
- * Testing Set (30%)
-2. Validation Set: 30% of the working dataset.
 
 ## Appendix 1: Getting and Cleaning Data
 

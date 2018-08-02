@@ -128,6 +128,38 @@ $(document).ready(function () {
 </div>
 
 
+<div id="methodology" class="section level2">
+<h2>Methodology</h2>
+<div id="model-selection" class="section level3">
+<h3>Model Selection</h3>
+<p>Given the classification problem, the following model types were tried separately, each with its own feature selection.</p>
+<ol style="list-style-type: decimal">
+<li>GLM - Logistic Regression</li>
+<li>Random Forests</li>
+<li>Boosting</li>
+</ol>
+<p>After obtaining results for each model, a final GAM model based on the combination of the previous ones was also tested.</p>
+</div>
+<div id="error-type-selection" class="section level3">
+<h3>Error Type Selection</h3>
+<p>Given the classification problem, with more than two possible outcomes, the main error type used for each model was Accuracy. Additionally, for the GAM model evaluation, RMSE was also taken into consideration.</p>
+</div>
+<div id="data-splitting-and-cross-validation" class="section level3">
+<h3>Data Splitting and Cross Validation</h3>
+<p>The following three sets were created, using Random Subsampling:</p>
+<ol style="list-style-type: decimal">
+<li>Building Data Set: 70% of the working dataset. This set was sub divided again into:</li>
+</ol>
+<ul>
+<li>Training Set (70%)</li>
+<li>Testing Set (30%)</li>
+</ul>
+<ol start="2" style="list-style-type: decimal">
+<li>Validation Set: 30% of the working dataset.</li>
+</ol>
+<p>Given the types of models selected (besides GLM), which use sub sampling themselves, all models were trained using the same training and testing sets. The validation set was finally used for the GAM based combination model.</p>
+</div>
+</div>
 <div id="getting-and-cleaning-data" class="section level2">
 <h2>Getting and Cleaning Data</h2>
 <p>Training and testing sets were downloaded using read_csv function, with the ‘na’ parameter tweaked so that it also included “#DIV/0!” cases (besides the default “” and “NA” cases). Additionally, first columns containing row numbers were eliminated from the obtained datasets.</p>
@@ -154,36 +186,16 @@ anyNA(workingset)</code></pre>
 <pre class="r"><code>dim(workingset)</code></pre>
 <pre><code>## [1] 19621    59</code></pre>
 </div>
-<div id="methodology" class="section level2">
-<h2>Methodology</h2>
-<div id="model-selection" class="section level3">
-<h3>Model Selection</h3>
-<p>Given the classification problem, the following model types were tried separately, each with its own feature selection.</p>
-<ol style="list-style-type: decimal">
-<li>GLM - Logistic Regression</li>
-<li>Random Forests</li>
-<li>Boosting</li>
-</ol>
-<p>After obtaining results for each model, a final GAM model based on the combination of the previous ones was also tested.</p>
-</div>
-<div id="error-type-selection" class="section level3">
-<h3>Error Type Selection</h3>
-<p>Given the classification problem, with more than two possible outcomes, the main error type used for each model was Accuracy. Additionally, for the GAM model evaluation, RMSE was also taken into consideration.</p>
-</div>
-<div id="cross-validation" class="section level3">
-<h3>Cross Validation</h3>
-<p>The following three sets were created, using Random Subsampling:</p>
-<ol style="list-style-type: decimal">
-<li>Building Data Set: 70% of the working dataset. This set was sub divided again into:</li>
-</ol>
-<ul>
-<li>Training Set (70%)</li>
-<li>Testing Set (30%)</li>
-</ul>
-<ol start="2" style="list-style-type: decimal">
-<li>Validation Set: 30% of the working dataset.</li>
-</ol>
-</div>
+<div id="data-splitting" class="section level2">
+<h2>Data Splitting</h2>
+<p>Step 1: Creating building and validation sets</p>
+<pre class="r"><code>indbuild &lt;- createDataPartition(workingset$classe, p = 0.7, list = FALSE)
+validata &lt;- workingset[-indbuild,]
+buildata &lt;- workingset[indbuild,]</code></pre>
+<p>Step 2: Creating training and testing sets</p>
+<pre class="r"><code>indtrain &lt;- createDataPartition(buildata$classe, p = 0.7, list = FALSE)
+training &lt;- buildata[indtrain,]
+testing &lt;- buildata[-indtrain,]</code></pre>
 </div>
 <div id="appendix-1-getting-and-cleaning-data" class="section level2">
 <h2>Appendix 1: Getting and Cleaning Data</h2>
