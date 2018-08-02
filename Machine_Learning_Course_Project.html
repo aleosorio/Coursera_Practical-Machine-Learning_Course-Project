@@ -132,17 +132,17 @@ $(document).ready(function () {
 <h2>Methodology</h2>
 <div id="model-selection" class="section level3">
 <h3>Model Selection</h3>
-<p>Given the classification problem, the following model types were tried separately, each with its own feature selection.</p>
+<p>Given the multiple-outcome-classification problem (more than 2 possible factor-type outcomes), the following model types were tried separately, each with its own feature selection.</p>
 <ol style="list-style-type: decimal">
-<li>GLM - Logistic Regression</li>
+<li>Penalized Multinomial Logistic Regression</li>
 <li>Random Forests</li>
-<li>Boosting</li>
+<li>Boosting with Trees</li>
 </ol>
 <p>After obtaining results for each model, a final GAM model based on the combination of the previous ones was also tested.</p>
 </div>
 <div id="error-type-selection" class="section level3">
 <h3>Error Type Selection</h3>
-<p>Given the classification problem, with more than two possible outcomes, the main error type used for each model was Accuracy. Additionally, for the GAM model evaluation, RMSE was also taken into consideration.</p>
+<p>Given the problem has more than two possible outcomes, the main error type used for each model was Accuracy. Additionally, for the GAM model evaluation, RMSE was also taken into consideration.</p>
 </div>
 <div id="data-splitting-and-cross-validation" class="section level3">
 <h3>Data Splitting and Cross Validation</h3>
@@ -164,22 +164,22 @@ $(document).ready(function () {
 <h2>Getting and Cleaning Data</h2>
 <p>Training and testing sets were downloaded using read_csv function, with the ‘na’ parameter tweaked so that it also included “#DIV/0!” cases (besides the default “” and “NA” cases). Additionally, first columns containing row numbers were eliminated from the obtained datasets.</p>
 <p>Next, columns from the testing set that included NAs, where identified and dimensioned the following way:</p>
-<pre class="r"><code>table(colSums((is.na(testing))))</code></pre>
+<pre class="r"><code>table(colSums((is.na(origtest))))</code></pre>
 <pre><code>## 
 ##   0  20 
 ##  59 100</code></pre>
 <p>Therefore, as all columns with NAs (100 in this case) had 100% NAs (20 each), those columns were removed both from the testing and training datasets.</p>
-<pre class="r"><code>datacols &lt;- names(which(colSums(is.na(testing))!=0))
-testing &lt;- select(testing, -datacols)
-training &lt;- select(training, -datacols)</code></pre>
+<pre class="r"><code>datacols &lt;- names(which(colSums(is.na(origtest))!=0))
+origtest &lt;- select(origtest, -datacols)
+origtrain &lt;- select(origtrain, -datacols)</code></pre>
 <p>Then, a final row check for NAs was performed for the training set</p>
-<pre class="r"><code>which(colSums(is.na(training)) != 0)</code></pre>
+<pre class="r"><code>which(colSums(is.na(origtrain)) != 0)</code></pre>
 <pre><code>## magnet_dumbbell_z  magnet_forearm_y  magnet_forearm_z 
 ##                45                57                58</code></pre>
-<pre class="r"><code>which(rowSums(is.na(training)) != 0)</code></pre>
+<pre class="r"><code>which(rowSums(is.na(origtrain)) != 0)</code></pre>
 <pre><code>## [1] 5373</code></pre>
 <p>Finally, after removing the only row with the 3 remaining NAs from the training set, the obtained working set is checked for NAs for the last time:</p>
-<pre class="r"><code>workingset &lt;- training[-which(rowSums(is.na(training)) != 0),]
+<pre class="r"><code>workingset &lt;- origtrain[-which(rowSums(is.na(origtrain)) != 0),]
 anyNA(workingset)</code></pre>
 <pre><code>## [1] FALSE</code></pre>
 <p>The final working dataset, with no NAs, went down to the following dimensions (detailed structure of the obtained dataset can be seen in Appendix 1):</p>
@@ -196,6 +196,32 @@ buildata &lt;- workingset[indbuild,]</code></pre>
 <pre class="r"><code>indtrain &lt;- createDataPartition(buildata$classe, p = 0.7, list = FALSE)
 training &lt;- buildata[indtrain,]
 testing &lt;- buildata[-indtrain,]</code></pre>
+</div>
+<div id="model-testing" class="section level2">
+<h2>Model Testing</h2>
+<div id="multinomial-logistic-regression" class="section level3">
+<h3>Multinomial Logistic Regression</h3>
+<p>Model used:</p>
+<pre><code>## train.formula(form = classe ~ ., data = training[, -c(1:6)], 
+##     method = &quot;multinom&quot;)</code></pre>
+<p>Predicting:</p>
+<pre class="r"><code>predmlog &lt;- predict(modfitmlog, newdata = testing[,-c(1:6, 59)])</code></pre>
+<p>Overall Results:</p>
+<pre><code>##           Reference
+## Prediction   A   B   C   D   E
+##          A 981 117  95  57  62
+##          B  63 401  63  11  82
+##          C  46 117 469 113  77
+##          D  77  39  73 462  88
+##          E   4 123  18  32 448</code></pre>
+<pre><code>##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
+##   6.704711e-01   5.818925e-01   6.558763e-01   6.848237e-01   2.843613e-01 
+## AccuracyPValue  McnemarPValue 
+##   0.000000e+00   3.099710e-37</code></pre>
+</div>
+<div id="p-values-for-feature-selection" class="section level3">
+<h3>P-Values for feature selection</h3>
+</div>
 </div>
 <div id="appendix-1-getting-and-cleaning-data" class="section level2">
 <h2>Appendix 1: Getting and Cleaning Data</h2>

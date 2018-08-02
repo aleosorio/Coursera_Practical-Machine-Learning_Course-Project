@@ -16,17 +16,17 @@ set.seed(123)
 
 ### Model Selection
 
-Given the classification problem, the following model types were tried separately, each with its own feature selection.
+Given the multiple-outcome-classification problem (more than 2 possible factor-type outcomes), the following model types were tried separately, each with its own feature selection.
 
-1. GLM - Logistic Regression
+1. Penalized Multinomial Logistic Regression
 2. Random Forests
-3. Boosting
+3. Boosting with Trees
 
 After obtaining results for each model, a final GAM model based on the combination of the previous ones was also tested.
 
 ### Error Type Selection
 
-Given the classification problem, with more than two possible outcomes, the main error type used for each model was Accuracy.  Additionally, for the GAM model evaluation, RMSE was also taken into consideration.
+Given the problem has more than two possible outcomes, the main error type used for each model was Accuracy.  Additionally, for the GAM model evaluation, RMSE was also taken into consideration.
 
 ### Data Splitting and Cross Validation
 
@@ -44,37 +44,37 @@ Given the types of models selected (besides GLM), which use sub sampling themsel
 Training and testing sets were downloaded using read_csv function, with the 'na' parameter tweaked so that it also included "#DIV/0!" cases (besides the default "" and "NA" cases).  Additionally, first columns containing row numbers were eliminated from the obtained datasets.
 
 ```{r, include=FALSE}
-training <- read_csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", na = c("", "NA", "#DIV/0!"))
-training <- training[,-1]
-testing <- read_csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", na = c("", "NA"))
-testing <- testing[,-1]
+origtrain <- read_csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", na = c("", "NA", "#DIV/0!"))
+origtrain <- origtrain[,-1]
+origtest <- read_csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", na = c("", "NA"))
+origtest <- origtest[,-1]
 ```
 
 Next, columns from the testing set that included NAs, where identified and dimensioned the following way:
 
 ```{r}
-table(colSums((is.na(testing))))
+table(colSums((is.na(origtest))))
 ```
 
 Therefore, as all columns with NAs (100 in this case) had 100% NAs (20 each), those columns were removed both from the testing and training datasets.
 
 ```{r}
-datacols <- names(which(colSums(is.na(testing))!=0))
-testing <- select(testing, -datacols)
-training <- select(training, -datacols)
+datacols <- names(which(colSums(is.na(origtest))!=0))
+origtest <- select(origtest, -datacols)
+origtrain <- select(origtrain, -datacols)
 ```
 
 Then, a final row check for NAs was performed for the training set
 
 ```{r}
-which(colSums(is.na(training)) != 0)
-which(rowSums(is.na(training)) != 0)
+which(colSums(is.na(origtrain)) != 0)
+which(rowSums(is.na(origtrain)) != 0)
 ```
 
 Finally, after removing the only row with the 3 remaining NAs from the training set, the obtained working set is checked for NAs for the last time:
 
 ```{r}
-workingset <- training[-which(rowSums(is.na(training)) != 0),]
+workingset <- origtrain[-which(rowSums(is.na(origtrain)) != 0),]
 anyNA(workingset)
 ```
 
@@ -101,6 +101,35 @@ indtrain <- createDataPartition(buildata$classe, p = 0.7, list = FALSE)
 training <- buildata[indtrain,]
 testing <- buildata[-indtrain,]
 ```
+
+## Model Testing
+
+### Multinomial Logistic Regression
+
+```{r, include=FALSE}
+modfitmlog <- train(classe ~ ., method = "multinom", data = training[,-c(1:6)])
+```
+
+Model used:
+
+```{r, echo=FALSE}
+modfitmlog$call
+```
+
+```{r, echo=FALSE}
+predmlog <- predict(modfitmlog, newdata = testing[,-c(1:6, 59)])
+```
+
+Overall Results:
+
+```{r, echo=FALSE}
+confmatmlog <- confusionMatrix(predmlog, factor(testing$classe))
+confmatmlog$table
+confmatmlog$overall
+```
+
+### P-Values for feature selection
+
 
 
 ## Appendix 1: Getting and Cleaning Data
