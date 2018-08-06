@@ -171,8 +171,8 @@ names(lesscoeff)
 
 ```{r, include=FALSE}
 namelist <- names(training[, -c(1:6, 59)])
-features2 <- reformulate(termlabels = namelist[-grep("gyro", namelist, value = FALSE)], response = 'classe')
-modfitmlog2 <- train(features2, method = "multinom", data = training[, -c(1:6)])
+lessfeatures <- reformulate(termlabels = namelist[-grep("gyro", namelist, value = FALSE)], response = 'classe')
+modfitmlog2 <- train(lessfeatures, method = "multinom", data = training[, -c(1:6)])
 predmlog2 <- predict(modfitmlog2, newdata = select(testing[,-c(1:6, 59)], -contains("gyros")))
 confmatmlog2 <- confusionMatrix(predmlog2, factor(testing$classe))
 confmatmlog2$table
@@ -185,10 +185,33 @@ Interesting to note that almost the same performance was obtained with 12 less f
 
 PENDIENTE
 
-### Random Forests
+### Predicting with Trees
 
 ```{r, include=FALSE}
-modfitrf <- train(classe ~ ., method = "rf", data = training[,-c(1:6)])
+modfittree <- train(classe ~ ., method = "rpart", data = training[,-c(1:6)])
+predtree <- predict(modfittree, newdata = testing[,-c(1:6, 59)])
+```
+
+#### Model trained
+
+```{r, echo=FALSE}
+modfittree$call
+```
+
+#### Performance obtained
+
+```{r}
+confmattree <- confusionMatrix(predtree, factor(testing$classe))
+confmattree$table
+confmattree$overall
+```
+
+### Random Forest
+
+Due to large processing time, training was carried on with less features (the ones obtained from Multinomial Logistic Regression based on p-value analysis of its coefficients).
+
+```{r, include=FALSE}
+modfitrf <- train(lessfeatures, method = "rf", data = training[,-c(1:6)])
 predrf <- predict(modfitrf, newdata = testing[,-c(1:6, 59)])
 ```
 
