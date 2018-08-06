@@ -104,7 +104,9 @@ testing <- buildata[-indtrain,]
 
 ## Model Testing
 
-### Multinomial Logistic Regression
+### Penalized Multinomial Logistic Regression
+
+#### Training
 
 ```{r, include=FALSE}
 modfitmlog <- train(classe ~ ., method = "multinom", data = training[,-c(1:6)])
@@ -128,9 +130,102 @@ confmatmlog$table
 confmatmlog$overall
 ```
 
-### P-Values for feature selection
+#### P-Values for preliminary feature selection
 
+t Statistics:
 
+Given the fact that null hypotheses consider coefficients equal to cero, the t statistics are just the estimates divided by their standard errors, as follows:
+
+```{r}
+modfitmlog_coef <- summary(modfitmlog)$coefficients
+modfitmlog_stderr <- summary(modfitmlog)$standard.errors
+tBetas <- modfitmlog_coef/modfitmlog_stderr
+```
+
+Degrees of freedom:
+
+```{r}
+# Model's effective degrees of freedom
+modfitmlog_edf <- modfitmlog$finalModel["edf"]
+
+# Degrees of freedom for p-Values:
+n <- length(training$classe)
+df <- n - modfitmlog_edf[[1]]
+df
+```
+
+p Values:
+```{r}
+pBetas <- 2 * data.frame(pt(abs(tBetas), df = df, lower.tail = FALSE))
+```
+
+#### Preliminary feature selection
+
+Features eliminated due to high p-values for all possible outcome factors:
+```{r}
+lesscoeff <- select(pBetas, contains("gyros"))
+names(lesscoeff)
+```
+
+#### Simplified model
+
+```{r, include=FALSE}
+namelist <- names(training[, -c(1:6, 59)])
+features2 <- reformulate(termlabels = namelist[-grep("gyro", namelist, value = FALSE)], response = 'classe')
+modfitmlog2 <- train(features2, method = "multinom", data = training[, -c(1:6)])
+predmlog2 <- predict(modfitmlog2, newdata = select(testing[,-c(1:6, 59)], -contains("gyros")))
+confmatmlog2 <- confusionMatrix(predmlog2, factor(testing$classe))
+confmatmlog2$table
+confmatmlog2$overall
+```
+
+Interesting to note that almost the same performance was obtained with 12 less features than the original model.
+
+#### ANOVA Analysis for final feature selection
+
+PENDIENTE
+
+### Random Forests
+
+```{r, include=FALSE}
+modfitrf <- train(classe ~ ., method = "rf", data = training[,-c(1:6)])
+predrf <- predict(modfitrf, newdata = testing[,-c(1:6, 59)])
+```
+
+#### Model trained
+
+```{r, echo=FALSE}
+modfitrf$call
+```
+
+#### Performance obtained
+
+```{r}
+confmatrf <- confusionMatrix(predrf, factor(testing$classe))
+confmatrf$table
+confmatrf$overall
+```
+
+### Boosting With Trees
+
+```{r, include=FALSE}
+modfitgbm <- train(classe ~ ., method = "gbm", data = training[,-c(1:6)])
+predgbm <- predict(modfitgbm, newdata = testing[,-c(1:6, 59)])
+```
+
+#### Model trained
+
+```{r, echo=FALSE}
+modfitgbm$call
+```
+
+#### Performance Obtained
+
+```{r}
+confmatgbm <- confusionMatrix(predgbm, factor(testing$classe))
+confmatgbm$table
+confmatgbm$overall
+```
 
 ## Appendix 1: Getting and Cleaning Data
 
