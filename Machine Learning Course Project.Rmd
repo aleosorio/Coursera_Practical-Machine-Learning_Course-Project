@@ -16,17 +16,22 @@ set.seed(123)
 
 ### Model Selection
 
-Given the multiple-outcome-classification problem (more than 2 possible factor-type outcomes), the following model types were tried separately, each with its own feature selection.
+Given the multiple-outcome-classification problem (more than 2 possible factor-type outcomes), the following model types were tried separately.
 
 1. Penalized Multinomial Logistic Regression
-2. Random Forests
-3. Boosting with Trees
+2. Trees
+3. Random Forests
+4. Boosting with Trees
 
-After obtaining results for each model, a final GAM model based on the combination of the previous ones was also tested.
+After obtaining results for each model, a final GAM model based on the combination of two of the previous ones (the ones with best accuracy) was also tested.
 
 ### Error Type Selection
 
-Given the problem has more than two possible outcomes, the main error type used for each model was Accuracy.  Additionally, for the GAM model evaluation, RMSE was also taken into consideration.
+Given the problem has more than two possible outcomes, the main error type used for each model was Accuracy (below 90% would be considered low).
+
+### Feature Selection
+
+Based on a p-value analysis on the coefficients of model 1 (Penalized Multinomial Logistic Regression), the final regressors were obtained for the rest of the models.
 
 ### Data Splitting and Cross Validation
 
@@ -37,7 +42,7 @@ The following three sets were created, using Random Subsampling:
  * Testing Set (30%)
 2. Validation Set: 30% of the working dataset.
 
-Given the types of models selected (besides GLM), which use sub sampling themselves, all models were trained using the same training and testing sets.  The validation set was finally used for the GAM based combination model.
+The validation set was finally used for the GAM based combination model.
 
 ## Getting and Cleaning Data
 
@@ -102,7 +107,7 @@ training <- buildata[indtrain,]
 testing <- buildata[-indtrain,]
 ```
 
-## Model Testing
+## Selection of Regressors and Model Testing
 
 ### Penalized Multinomial Logistic Regression
 
@@ -130,7 +135,9 @@ confmatmlog$table
 confmatmlog$overall
 ```
 
-#### P-Values for preliminary feature selection
+Even though the obtained accuracy was considered low (below 90%), this model's main objective was to determine the regressors to use with the rest of models.  Therefore the following p-value analysis.
+
+#### P-Values for feature selection
 
 t Statistics:
 
@@ -167,7 +174,7 @@ lesscoeff <- select(pBetas, contains("gyros"))
 names(lesscoeff)
 ```
 
-#### Simplified model
+#### Model with final regressors
 
 ```{r, include=FALSE}
 namelist <- names(training[, -c(1:6, 59)])
@@ -179,11 +186,7 @@ confmatmlog2$table
 confmatmlog2$overall
 ```
 
-Interesting to note that almost the same performance was obtained with 12 less features than the original model.
-
-#### ANOVA Analysis for final feature selection
-
-PENDIENTE
+Interesting to note that almost the same performance was obtained with 12 less features than the original model.  Therefore the remaining models will consider those regressors.
 
 ### Predicting with Trees
 
@@ -193,6 +196,8 @@ predtree <- predict(modfittree, newdata = testing[,-c(1:6, 59)])
 ```
 
 #### Model trained
+
+Given the quick result obtained with all regressors, there was no need to run the model with the subset obtained through model 1.
 
 ```{r, echo=FALSE}
 modfittree$call
@@ -206,9 +211,9 @@ confmattree$table
 confmattree$overall
 ```
 
-### Random Forest
+It's worth noting that the Multinomial Logistic Regression model was almost ten percentage points more accurate than this one, even with less regressors.
 
-Due to large processing time, training was carried on with less features (the ones obtained from Multinomial Logistic Regression based on p-value analysis of its coefficients).
+### Random Forest
 
 ```{r, include=FALSE}
 modfitrf <- train(lessfeatures, method = "rf", data = training[,-c(1:6)])
@@ -216,6 +221,8 @@ predrf <- predict(modfitrf, newdata = testing[,-c(1:6, 59)])
 ```
 
 #### Model trained
+
+Due to large processing time, training was carried on with the subset of features obtained from model 1 (Multinomial Logistic Regression based on p-value analysis of its coefficients).
 
 ```{r, echo=FALSE}
 modfitrf$call
@@ -238,17 +245,74 @@ predgbm <- predict(modfitgbm, newdata = testing[,-c(1:6, 59)])
 
 #### Model trained
 
+In this case, given the brief time required to obtain the result, all possible features were used.
+
 ```{r, echo=FALSE}
 modfitgbm$call
 ```
 
-#### Performance Obtained
+#### Performance obtained
 
 ```{r}
 confmatgbm <- confusionMatrix(predgbm, factor(testing$classe))
 confmatgbm$table
 confmatgbm$overall
 ```
+
+It's worth noting that Random Forest with less features obtained a better accuracy than this model, even though it contained all possible features.
+
+### Combining Predictors
+
+Based on the accuracy obtained with each previous model, Random Forests and Boosting with Trees were chosen for this stage.
+
+#### Training data set
+
+```{r}
+dfpredcomb <- data.frame(predrf, predgbm, classe = factor(testing$classe))
+```
+
+The following data set for GAM training was obtained from each model's predictions ('rf' and 'gbm') plus the real results in the testing set ('real').
+
+```{r, echo=FALSE}
+str(dfpredcomb)
+```
+
+#### Model trained
+
+```{r, include=FALSE}
+modfitcomb <- train(classe ~ ., method = "gam", data = dfpredcomb)
+predcomb <- predict(modfitcomb, dfpredcomb[,-3])
+```
+
+```{r, echo=FALSE}
+modfitcomb$call
+```
+
+#### Performance obtained
+
+```{r}
+confmatcomb <- confusionMatrix(predcomb, factor(testing$classe))
+confmatcomb$table
+confmatcomb$overall
+```
+
+The warning message "fitted probabilities numerically 0 or 1 occurred" was generated for all combinations of predictors, besides de two presented here.  Additionally, it happened with methods 'gamLoess' and 'gamSpline'.  After some research, it means the function didn't converge due to one of the predictor variables separating perfectly the values of the dependent variable.
+
+Final model to be used, then, will be Random Forest, with an accuracy of almost 99%.
+
+### Testing Random Forest accuracy with Validation Data
+
+```{r, echo=FALSE}
+predrf_val <- predict(modfitrf, newdata = validata[,-c(1:6, 59)])
+```
+
+```{r}
+confmatrf_val <- confusionMatrix(predrf_val, factor(validata$classe))
+confmatrf_val$table
+confmatrf_val$overall
+```
+
+Good to see an accuracy of almost 99% is reached again.  Good odds for the quiz!
 
 ## Appendix 1: Getting and Cleaning Data
 
