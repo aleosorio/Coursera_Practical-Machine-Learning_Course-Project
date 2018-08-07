@@ -12,7 +12,7 @@ library(caret)
 set.seed(123)
 ```
 
-## Methodology
+## Executive Summary
 
 ### Model Selection
 
@@ -25,14 +25,6 @@ Given the multiple-outcome-classification problem (more than 2 possible factor-t
 
 After obtaining results for each model, a final GAM model based on the combination of two of the previous ones (the ones with best accuracy) was also tested.
 
-### Error Type Selection
-
-Given the problem has more than two possible outcomes, the main error type used for each model was Accuracy (below 90% would be considered low).
-
-### Feature Selection
-
-Based on a p-value analysis on the coefficients of model 1 (Penalized Multinomial Logistic Regression), the final regressors were obtained for the rest of the models.
-
 ### Data Splitting and Cross Validation
 
 The following three sets were created, using Random Subsampling:
@@ -42,9 +34,35 @@ The following three sets were created, using Random Subsampling:
  * Testing Set (30%)
 2. Validation Set: 30% of the working dataset.
 
-The validation set was finally used for the GAM based combination model.
+The validation set was prepared for the final testing of the GAM based combination model.
 
-## Getting and Cleaning Data
+For further details on the steps taken and the obtained results, refer to Appendix 2: Data Splitting.
+
+### Feature Selection
+
+Feature selection was based on the following 2 criteria:
+
+1. Examining the variables available in the testing set.  All variables (100) with mainly NAs (100% each) in the testing set, were also discarded in the training set.  The resulting data sets went down to 59 columns each.  More details both on this point and on how the final data sets were obtained, in Appendix 1: Getting and Cleaning Data.
+
+2. Based on a p-value analysis on the coefficients of model 1 (Penalized Multinomial Logistic Regression), the final regressors were obtained for the rest of the models.  Further details on steps taken and final data set obtained, in Appendix 3: Selection of Regressors Through p-Values Analysis.
+
+### Error Type Selection
+
+Given the problem has more than two possible outcomes, plus the objective of the project, the main error type used for each model was Accuracy (below 90% was considered low).
+
+### Results Obtained
+
+Performance obtained by each model, with final features selected, was as follows:
+
+1. Multinomial Logistic Regression (Appendix 4.1): 67% 
+2. Trees (Appendix 4.2): 58%
+3. Random Forests (Appendix 4.3): 99%
+4. Boosting with Trees (Appendix 4.4): 96%
+5. Combination of Predictors with GAM (Appendix 4.5): 48%
+
+Model 5 didn't converge due to one of the predictor variables separating perfectly the values of the dependent variable (more details in Appendix 4.5). Therefore, the final selected model, tested again using the validation set, was Random Forest.  Its final attained accuracy was, again, 99% (Appendix 5).  Given that result, the quiz was answered using said model, obtaining a 95% final grade.
+
+## Appendix 1: Getting and Cleaning Data
 
 Training and testing sets were downloaded using read_csv function, with the 'na' parameter tweaked so that it also included "#DIV/0!" cases (besides the default "" and "NA" cases).  Additionally, first columns containing row numbers were eliminated from the obtained datasets.
 
@@ -89,7 +107,9 @@ The final working dataset, with no NAs, went down to the following dimensions (d
 dim(workingset)
 ```
 
-## Data Splitting
+Finally, the structure of the obtained training dataset was very similar to that of the testing set, but for the last column ('question' v/s 'classe').
+
+## Appendix 2: Data Splitting
 
 Step 1: Creating building and validation sets
 
@@ -107,11 +127,11 @@ training <- buildata[indtrain,]
 testing <- buildata[-indtrain,]
 ```
 
-## Selection of Regressors and Model Testing
+## Appendix 3: Selection of Regressors Through p-Values Analysis
 
-### Penalized Multinomial Logistic Regression
+As mentioned earlier, a p-value analysis of a Penalized Multinomial Logistic Regression's coefficients was used in order to determine which potential regressors to discard from further analysis.
 
-#### Training
+### Training
 
 ```{r, include=FALSE}
 modfitmlog <- train(classe ~ ., method = "multinom", data = training[,-c(1:6)])
@@ -127,7 +147,7 @@ modfitmlog$call
 predmlog <- predict(modfitmlog, newdata = testing[,-c(1:6, 59)])
 ```
 
-Overall Results:
+Just out of curiosity, the model's overall results with 100% of the potential regressors, was:
 
 ```{r, echo=FALSE}
 confmatmlog <- confusionMatrix(predmlog, factor(testing$classe))
@@ -137,9 +157,9 @@ confmatmlog$overall
 
 Even though the obtained accuracy was considered low (below 90%), this model's main objective was to determine the regressors to use with the rest of models.  Therefore the following p-value analysis.
 
-#### P-Values for feature selection
+### P-Values for feature selection
 
-t Statistics:
+#### T statistics
 
 Given the fact that null hypotheses consider coefficients equal to cero, the t statistics are just the estimates divided by their standard errors, as follows:
 
@@ -149,24 +169,21 @@ modfitmlog_stderr <- summary(modfitmlog)$standard.errors
 tBetas <- modfitmlog_coef/modfitmlog_stderr
 ```
 
-Degrees of freedom:
+#### Degrees of freedom
 
 ```{r}
-# Model's effective degrees of freedom
 modfitmlog_edf <- modfitmlog$finalModel["edf"]
-
-# Degrees of freedom for p-Values:
 n <- length(training$classe)
 df <- n - modfitmlog_edf[[1]]
 df
 ```
 
-p Values:
+#### P values
 ```{r}
 pBetas <- 2 * data.frame(pt(abs(tBetas), df = df, lower.tail = FALSE))
 ```
 
-#### Preliminary feature selection
+### Final feature selection
 
 Features eliminated due to high p-values for all possible outcome factors:
 ```{r}
@@ -174,30 +191,47 @@ lesscoeff <- select(pBetas, contains("gyros"))
 names(lesscoeff)
 ```
 
-#### Model with final regressors
-
-```{r, include=FALSE}
+Therefore, the final formula to be used with all models, was the following:
+```{r}
 namelist <- names(training[, -c(1:6, 59)])
 lessfeatures <- reformulate(termlabels = namelist[-grep("gyro", namelist, value = FALSE)], response = 'classe')
+lessfeatures
+```
+
+## Appendix 4: Model Training and Performance Evaluation
+
+### Appendix 4.1: Multinomial Logistic Regression Model
+
+#### Model trained
+
+```{r, include=FALSE}
 modfitmlog2 <- train(lessfeatures, method = "multinom", data = training[, -c(1:6)])
+```
+
+```{r, echo=FALSE}
+modfitmlog2$call
+```
+
+
+#### Performance obtained
+
+```{r}
 predmlog2 <- predict(modfitmlog2, newdata = select(testing[,-c(1:6, 59)], -contains("gyros")))
 confmatmlog2 <- confusionMatrix(predmlog2, factor(testing$classe))
 confmatmlog2$table
 confmatmlog2$overall
 ```
 
-Interesting to note that almost the same performance was obtained with 12 less features than the original model.  Therefore the remaining models will consider those regressors.
+Interesting to note that almost the same performance was obtained with 12 less features than the original model.  Therefore, the remaining models will be trained with these same regressors.
 
-### Predicting with Trees
+###  Appendix 4.2: Predicting with Trees
 
 ```{r, include=FALSE}
-modfittree <- train(classe ~ ., method = "rpart", data = training[,-c(1:6)])
+modfittree <- train(lessfeatures, method = "rpart", data = training[,-c(1:6)])
 predtree <- predict(modfittree, newdata = testing[,-c(1:6, 59)])
 ```
 
 #### Model trained
-
-Given the quick result obtained with all regressors, there was no need to run the model with the subset obtained through model 1.
 
 ```{r, echo=FALSE}
 modfittree$call
@@ -211,9 +245,9 @@ confmattree$table
 confmattree$overall
 ```
 
-It's worth noting that the Multinomial Logistic Regression model was almost ten percentage points more accurate than this one, even with less regressors.
+It's worth noting that the Multinomial Logistic Regression model was almost ten percentage points more accurate than this one.  Just in case, training and predicting was repeated with this model, including all features and exactly the same result was obtained, thus showing so far a correct p-value analysis for regressor selection.
 
-### Random Forest
+### Appendix 4.3: Random Forest
 
 ```{r, include=FALSE}
 modfitrf <- train(lessfeatures, method = "rf", data = training[,-c(1:6)])
@@ -221,8 +255,6 @@ predrf <- predict(modfitrf, newdata = testing[,-c(1:6, 59)])
 ```
 
 #### Model trained
-
-Due to large processing time, training was carried on with the subset of features obtained from model 1 (Multinomial Logistic Regression based on p-value analysis of its coefficients).
 
 ```{r, echo=FALSE}
 modfitrf$call
@@ -236,16 +268,16 @@ confmatrf$table
 confmatrf$overall
 ```
 
-### Boosting With Trees
+Excelent performance, with only the regressors selected post p-value analysis.
+
+### Appendix 4.4: Boosting With Trees
 
 ```{r, include=FALSE}
-modfitgbm <- train(classe ~ ., method = "gbm", data = training[,-c(1:6)])
+modfitgbm <- train(lessfeatures, method = "gbm", data = training[,-c(1:6)])
 predgbm <- predict(modfitgbm, newdata = testing[,-c(1:6, 59)])
 ```
 
 #### Model trained
-
-In this case, given the brief time required to obtain the result, all possible features were used.
 
 ```{r, echo=FALSE}
 modfitgbm$call
@@ -259,9 +291,9 @@ confmatgbm$table
 confmatgbm$overall
 ```
 
-It's worth noting that Random Forest with less features obtained a better accuracy than this model, even though it contained all possible features.
+Finally, Random Forest obtained a better accuracy than this model.  Just in case, again, the same modelling was carried on with all possible regressors.  Almost the same results were obtaine.  Therefore, p-value analysis was indeed a useful method for selecting final regressors in this problem.
 
-### Combining Predictors
+### Appendix 4.5: Combining Predictors
 
 Based on the accuracy obtained with each previous model, Random Forests and Boosting with Trees were chosen for this stage.
 
@@ -300,11 +332,15 @@ The warning message "fitted probabilities numerically 0 or 1 occurred" was gener
 
 Final model to be used, then, will be Random Forest, with an accuracy of almost 99%.
 
-### Testing Random Forest accuracy with Validation Data
+### Appendix 5: Final Model's Performance
+
+As said previously, due to non converging GAM combining model, the final model to be tested with Validation Data, was Random Forest.
 
 ```{r, echo=FALSE}
 predrf_val <- predict(modfitrf, newdata = validata[,-c(1:6, 59)])
 ```
+
+Final obtained performance:
 
 ```{r}
 confmatrf_val <- confusionMatrix(predrf_val, factor(validata$classe))
@@ -312,12 +348,5 @@ confmatrf_val$table
 confmatrf_val$overall
 ```
 
-Good to see an accuracy of almost 99% is reached again.  Good odds for the quiz!
+Good to see an accuracy of almost 99% was accomplished again.  Sweet odds for the quiz!
 
-## Appendix 1: Getting and Cleaning Data
-
-Final structure of the obtained training dataset (very similar to that of the testing set, but for the last column):
-
-```{r}
-str(workingset)
-```
