@@ -3,8 +3,8 @@ title: 'Practical Machine Learning: Course Project'
 author: "Alejandro Osorio"
 date: "August, 2018"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -14,11 +14,17 @@ library(caret)
 set.seed(123)
 ```
 
+## Instructions
+
+One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.
+
+The goal of your project is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants, in order to predict the manner in which they did the exercise (the "classe" variable in the training set). You may use any of the other variables to predict with.
+
 ## Executive Summary
 
 ### Model Selection
 
-Given the multiple-outcome-classification problem (more than 2 possible factor-type outcomes), the following model types were tried separately.
+Given the multiple-outcome-classification problem (more than 2 possible factor-type outcomes, as the 'classe' variable consists of 5 possible factor values -A, B, C, D, E-), the following model types were tried separately.
 
 1. Penalized Multinomial Logistic Regression
 2. Trees
@@ -55,11 +61,11 @@ Given the problem has more than two possible outcomes, plus the objective of the
 
 Performance obtained by each model, with final features selected, was as follows:
 
-1. Multinomial Logistic Regression (Appendix 4.1): 67% 
-2. Trees (Appendix 4.2): 58%
-3. Random Forests (Appendix 4.3): 99%
-4. Boosting with Trees (Appendix 4.4): 96%
-5. Combination of Predictors with GAM (Appendix 4.5): 48%
+1. Multinomial Logistic Regression (Appendix 4.1): 67% accuracy.
+2. Trees (Appendix 4.2): 58% accuracy.
+3. Random Forests (Appendix 4.3): 99% accuracy.
+4. Boosting with Trees (Appendix 4.4): 96% accuracy.
+5. Combination of Predictors with GAM (Appendix 4.5): 48% accuracy.
 
 Model 5 didn't converge due to one of the predictor variables separating perfectly the values of the dependent variable (more details in Appendix 4.5). Therefore, the final selected model, tested again using the validation set, was Random Forest.  Its final attained accuracy was, again, 99% (Appendix 5).  Given that result, the quiz was answered using said model, obtaining a 95% final grade.
 
