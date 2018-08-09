@@ -3,8 +3,8 @@ title: 'Practical Machine Learning: Course Project'
 author: "Alejandro Osorio"
 date: "August, 2018"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
