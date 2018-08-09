@@ -43,7 +43,6 @@ For further details on the steps taken and the obtained results, refer to Append
 Feature selection was based on the following 2 criteria:
 
 1. Examining the variables available in the testing set.  All variables (100) with mainly NAs (100% each) in the testing set, were also discarded in the training set.  The resulting data sets went down to 59 columns each.  More details both on this point and on how the final data sets were obtained, in Appendix 1: Getting and Cleaning Data.
-
 2. Based on a p-value analysis on the coefficients of model 1 (Penalized Multinomial Logistic Regression), the final regressors were obtained for the rest of the models.  Further details on steps taken and final data set obtained, in Appendix 3: Selection of Regressors Through p-Values Analysis.
 
 ### Error Type Selection
@@ -119,7 +118,7 @@ validata <- workingset[-indbuild,]
 buildata <- workingset[indbuild,]
 ```
 
-Step 2: Creating training and testing sets
+Step 2: Creating training and testing sets, out of the building set
 
 ```{r}
 indtrain <- createDataPartition(buildata$classe, p = 0.7, list = FALSE)
@@ -212,17 +211,16 @@ modfitmlog2 <- train(lessfeatures, method = "multinom", data = training[, -c(1:6
 modfitmlog2$call
 ```
 
-
 #### Performance obtained
 
 ```{r}
-predmlog2 <- predict(modfitmlog2, newdata = select(testing[,-c(1:6, 59)], -contains("gyros")))
+predmlog2 <- predict(modfitmlog2, newdata = testing[,-c(1:6, 59)])
 confmatmlog2 <- confusionMatrix(predmlog2, factor(testing$classe))
 confmatmlog2$table
 confmatmlog2$overall
 ```
 
-Interesting to note that almost the same performance was obtained with 12 less features than the original model.  Therefore, the remaining models will be trained with these same regressors.
+Interesting to note that almost the same performance was obtained with 12 less features than the original model.  Therefore, the remaining models were trained with these same regressors.
 
 ###  Appendix 4.2: Predicting with Trees
 
@@ -291,7 +289,7 @@ confmatgbm$table
 confmatgbm$overall
 ```
 
-Finally, Random Forest obtained a better accuracy than this model.  Just in case, again, the same modelling was carried on with all possible regressors.  Almost the same results were obtaine.  Therefore, p-value analysis was indeed a useful method for selecting final regressors in this problem.
+Finally, Random Forest obtained a better accuracy than this model.  Just in case, again, the same modelling was carried on with all possible regressors.  Almost the same results were obtained.  Therefore, p-value analysis was indeed a useful method for selecting final regressors in this problem.
 
 ### Appendix 4.5: Combining Predictors
 
@@ -330,11 +328,11 @@ confmatcomb$overall
 
 The warning message "fitted probabilities numerically 0 or 1 occurred" was generated for all combinations of predictors, besides de two presented here.  Additionally, it happened with methods 'gamLoess' and 'gamSpline'.  After some research, it means the function didn't converge due to one of the predictor variables separating perfectly the values of the dependent variable.
 
-Final model to be used, then, will be Random Forest, with an accuracy of almost 99%.
+Final model used, then, was Random Forest, with an accuracy of almost 99%.
 
 ### Appendix 5: Final Model's Performance
 
-As said previously, due to non converging GAM combining model, the final model to be tested with Validation Data, was Random Forest.
+As said previously, due to non converging GAM combining model, the final model tested with Validation Data, was Random Forest.
 
 ```{r, echo=FALSE}
 predrf_val <- predict(modfitrf, newdata = validata[,-c(1:6, 59)])
@@ -349,4 +347,3 @@ confmatrf_val$overall
 ```
 
 Good to see an accuracy of almost 99% was accomplished again.  Sweet odds for the quiz!
-
